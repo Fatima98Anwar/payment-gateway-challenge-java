@@ -181,7 +181,8 @@ class PaymentGatewayControllerTest {
             .contentType(APPLICATION_JSON)
             .content(badPayload))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string("Rejected"));
+        .andExpect(jsonPath("$.status").value("Rejected"));
+
 
     bankServer.verify(); //verifies no call was made
   }
@@ -213,7 +214,7 @@ class PaymentGatewayControllerTest {
 
     mvc.perform(post("/api/payments").contentType(APPLICATION_JSON).content(bad))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string("Rejected"));
+        .andExpect(jsonPath("$.status").value("Rejected"));
 
     // If the gateway had called the bank, MockRestServiceServer would throw
     bankServer.verify();
@@ -228,7 +229,7 @@ class PaymentGatewayControllerTest {
 
     mvc.perform(post("/api/payments").contentType(APPLICATION_JSON).content(payload))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string("Rejected"));
+        .andExpect(jsonPath("$.status").value("Rejected"));
 
     bankServer.verify(); // ensures no bank call
   }

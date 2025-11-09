@@ -3,6 +3,7 @@ package com.checkout.payment.gateway.controller;
 import com.checkout.payment.gateway.model.PostPaymentRequest;
 import com.checkout.payment.gateway.model.PostPaymentResponse;
 import com.checkout.payment.gateway.service.PaymentGatewayService;
+import java.util.Map;
 import java.util.UUID;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +34,7 @@ public class PaymentGatewayController {
   public ResponseEntity<?> createPayment(@RequestBody PostPaymentRequest request){
     //stops request here if invalid
     if(!paymentGatewayService.isValidRequest(request)){
-      return ResponseEntity.badRequest().body(REJECTED.getName());
+      return ResponseEntity.badRequest().body(Map.of("status", REJECTED.getName()));
     }
 
     UUID id = paymentGatewayService.processPayment(request);
