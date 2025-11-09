@@ -43,7 +43,16 @@ public class PaymentGatewayService {
   }
 
   public UUID processPayment(PostPaymentRequest paymentRequest) {
-    return UUID.randomUUID();
+    LOG.info("Received payment request for card ending in {}", toLastFour(paymentRequest.getCardNumber()));
+    PaymentStatus status = authoriseWithBank(paymentRequest);
+
+    UUID id = UUID.randomUUID();
+    PostPaymentResponse response = buildResponse(paymentRequest, status, id);
+    paymentsRepository.add(response);
+
+    LOG.info("Processed payment id={} status={}", id, status.getName());
+    return id;
+  }
 
   //************************************** Helpers ***********************************************
 
