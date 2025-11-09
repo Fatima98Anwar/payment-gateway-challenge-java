@@ -7,6 +7,8 @@ public class PostPaymentRequest implements Serializable {
 
   @JsonProperty("card_number_last_four")
   private int cardNumberLastFour;
+  @JsonProperty("card_number")               // (full PAN for validation + bank call)
+  private String cardNumber;
   @JsonProperty("expiry_month")
   private int expiryMonth;
   @JsonProperty("expiry_year")
@@ -15,6 +17,11 @@ public class PostPaymentRequest implements Serializable {
   private int amount;
   private int cvv;
 
+  public String getCardNumber() { return cardNumber; }
+
+  public void setCardNumber(String cardNumber) {
+    this.cardNumber = cardNumber;
+  }
   public int getCardNumberLastFour() {
     return cardNumberLastFour;
   }
