@@ -14,6 +14,9 @@ The goal was to meet the functional requirements cleanly and clearly, without un
 - Implemented a clear **controller → service → repository** structure.
 - Created **BankRequest** and **BankResponse** DTOs to handle the payload shapes from the bank simulator, keeping gateway logic independent and flexible.
 - Made the **service layer modular**, with separate functions for each validation and a single orchestrator method to keep the flow clean.
+- Improved **validation** logic to support realistic formats (e.g. "01" expiry months).
+- Added structured JSON response for **rejected** requests for consistency.
+- Ensured **last four digits** are stored as **strings** to preserve leading zeros.
 - Added **logging** at key points to trace flow and outcomes, while avoiding sensitive data such as full card numbers or CVVs.
 - Implemented **comprehensive tests** covering:
   - Happy paths (Authorized, Declined)
@@ -33,43 +36,123 @@ The goal was to meet the functional requirements cleanly and clearly, without un
 ---
 
 ## Example API Requests
+> Note: `expiry_month` accepts numeric values (1–12). When testing via JSON, avoid leading-zero numbers (e.g. `01`) as they’re invalid JSON.  
+> Use plain numbers like `1`, or wrap with quotes (`"01"`) if you prefer the card-style format — both are accepted by the API.
+
+### POST Requests (Process Payment)
+The following examples demonstrate different outcomes based on the card number used.
 
 **Authorized (odd-ending PAN)**
 ```bash
 curl -s -X POST http://localhost:8090/api/payments \
  -H "Content-Type: application/json" \
- -d '{"card_number":"4111111111111111","expiry_month":12,"expiry_year":2029,"currency":"USD","amount":1050,"cvv":123}' | jq
+ -d '{"card_number":"4111222233334445","expiry_month":12,"expiry_year":2029,"currency":"GBP","amount":1050,"cvv":1243}' | jq
 ```
 
 ### Declined (even-ending PAN)
 ```bash
 curl -s -X POST http://localhost:8090/api/payments \
  -H "Content-Type: application/json" \
- -d '{"card_number":"4111111111111112","expiry_month":12,"expiry_year":2029,"currency":"USD","amount":1050,"cvv":123}' | jq
+ -d '{"card_number":"4111222233334444","expiry_month":"01","expiry_year":2030,"currency":"EUR","amount":10590,"cvv":133}' | jq
  ```
 
 ### Bank Error (zero-ending PAN, simulator returns 503)
 ```bash
 curl -s -X POST http://localhost:8090/api/payments \
  -H "Content-Type: application/json" \
- -d '{"card_number":"4111111111111110","expiry_month":12,"expiry_year":2029,"currency":"USD","amount":1050,"cvv":123}' | jq
+ -d '{"card_number":"4111432167890122","expiry_month":"06","expiry_year":2027,"currency":"USD","amount":10850,"cvv":124}' | jq
 ```
 
 ### Rejected (invalid format)
 ```bash
-curl -i -X POST http://localhost:8090/api/payments \
+curl -s -X POST http://localhost:8090/api/payments \
  -H "Content-Type: application/json" \
- -d '{"card_number":"4111-1111-1111-1111","expiry_month":12,"expiry_year":2029,"currency":"USD","amount":1050,"cvv":123}'
+ -d '{"card_number":"4111-5555-6666-7777 ","expiry_month":12,"expiry_year":2026,"currency":"EUR","amount":12050,"cvv":113}' | jq
 ```
 
 ### Authorized with lowercase currency
 ```bash
 curl -s -X POST http://localhost:8090/api/payments \
  -H "Content-Type: application/json" \
- -d '{"card_number":"4111111111111111","expiry_month":12,"expiry_year":2029,"currency":"usd","amount":1050,"cvv":123}' | jq
+ -d '{"card_number":"4111987654321123","expiry_month":12,"expiry_year":2029,"currency":"gbp","amount":10450,"cvv":1293}' | jq
+```
+---
+### Retrieve Payment by ID
+
+Payments can be retrieved during runtime using their unique identifier.  
+This returns status, masked card number (last four digits only), expiry, currency, and amount.
+
+```bash
+curl -s http://localhost:8090/api/payments/<id> | jq
+```
+**Example:**
+```bash
+curl -s http://localhost:8090/api/payments/ca2be3df-1039-412a-aadb-41219b3ebf05 | jq
+```
+> **Note:** IDs are stored in-memory and reset on each run. Replace `<id>` with the one returned in your POST response.
+
+### Full Flow Example (Create + Retrieve)
+
+```bash
+# Create a payment
+curl -s -X POST http://localhost:8090/api/payments \
+ -H "Content-Type: application/json" \
+ -d '{"card_number":"4111678943210987","expiry_month":"09","expiry_year":2029,"currency":"USD","amount":10950,"cvv":183}' | jq
+
+# Retrieve it using the ID from the response
+curl -s http://localhost:8090/api/payments/<id> | jq
+
+# Or run the full flow in one command (create + retrieve)
+curl -s -X POST http://localhost:8090/api/payments \
+ -H "Content-Type: application/json" \
+ -d '{"card_number":"4111678943210987","expiry_month":"09","expiry_year":2029,"currency":"USD","amount":10950,"cvv":183}' \
+ | tee >(jq) | jq -r '.id' | xargs -I {} curl -s http://localhost:8090/api/payments/{} | jq
+```
+---
+### Example API Responses
+
+**POST /api/payments**
+
+Example Request:
+```bash
+curl -s -X POST http://localhost:8090/api/payments \
+ -H "Content-Type: application/json" \
+ -d '{"card_number":"4111111111111111","expiry_month":12,"expiry_year":2029,"currency":"USD","amount":1050,"cvv":123}' | jq
+```
+Example Response:
+```json
+{
+  "id": "683930a6-307a-4171-ad9f-1409a666003d",
+  "status": "Authorized",
+  "cardNumberLastFour": 1111,
+  "expiryMonth": 12,
+  "expiryYear": 2029,
+  "currency": "USD",
+  "amount": 1050
+}
 ```
 ---
 
+**GET /api/payments/{id}**
+
+Example Request:
+```bash
+curl -s http://localhost:8090/api/payments/683930a6-307a-4171-ad9f-1409a666003d | jq
+```
+
+Example Response:
+```json
+{
+  "id": "683930a6-307a-4171-ad9f-1409a666003d",
+  "status": "Authorized",
+  "cardNumberLastFour": 1111,
+  "expiryMonth": 12,
+  "expiryYear": 2029,
+  "currency": "USD",
+  "amount": 1050
+}
+```
+---
 ## Tests
 
 The test suite covers:
