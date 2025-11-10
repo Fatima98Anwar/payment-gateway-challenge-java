@@ -85,8 +85,7 @@ public class PaymentGatewayService {
     PostPaymentResponse response = new PostPaymentResponse();
     response.setId(id);
     response.setStatus(status);
-    response.setCardNumberLastFour(Integer.parseInt(toLastFour(request.getCardNumber())));
-    response.setExpiryMonth(request.getExpiryMonth());
+    response.setCardNumberLastFour(toLastFour(request.getCardNumber()));
     response.setExpiryYear(request.getExpiryYear());
     response.setCurrency(request.getCurrency().toUpperCase());
     response.setAmount(request.getAmount());
@@ -144,7 +143,7 @@ public class PaymentGatewayService {
   }
 
   private String toLastFour(String cardNumber){
-    if(cardNumber == null) return "";
+    if (cardNumber == null || cardNumber.length() < 4) return "";
     return cardNumber.substring(cardNumber.length() - 4);
   }
 }

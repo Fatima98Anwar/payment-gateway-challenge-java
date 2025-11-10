@@ -56,7 +56,7 @@ class PaymentGatewayControllerTest {
     payment.setStatus(PaymentStatus.AUTHORIZED);
     payment.setExpiryMonth(12);
     payment.setExpiryYear(2027);
-    payment.setCardNumberLastFour(4321);
+    payment.setCardNumberLastFour("4321");
 
     paymentsRepository.add(payment);
 
@@ -103,7 +103,7 @@ class PaymentGatewayControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(id))
         .andExpect(jsonPath("$.status").value("Authorized"))
-        .andExpect(jsonPath("$.cardNumberLastFour").value(1111));
+        .andExpect(jsonPath("$.cardNumberLastFour").value("1111"));
   }
 
 
@@ -128,7 +128,7 @@ class PaymentGatewayControllerTest {
         .content(payload))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("Authorized"))
-        .andExpect(jsonPath("$.cardNumberLastFour").value(1111))
+        .andExpect(jsonPath("$.cardNumberLastFour").value("1111"))
         .andExpect(jsonPath("$.expiryMonth").value(12))
         .andExpect(jsonPath("$.expiryYear").value(2029))
         .andExpect(jsonPath("$.currency").value("USD"))
@@ -157,7 +157,7 @@ class PaymentGatewayControllerTest {
             .content(payload))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value("Declined"))
-        .andExpect(jsonPath("$.cardNumberLastFour").value(1112))
+        .andExpect(jsonPath("$.cardNumberLastFour").value("1112"))
         .andExpect(jsonPath("$.expiryMonth").value(12))
         .andExpect(jsonPath("$.expiryYear").value(2029))
         .andExpect(jsonPath("$.currency").value("USD"))
