@@ -10,7 +10,7 @@ public class PostPaymentRequest implements Serializable {
   @JsonProperty("card_number")               // (full PAN for validation + bank call)
   private String cardNumber;
   @JsonProperty("expiry_month")
-  private int expiryMonth;
+  private String expiryMonth; //changed to month to parse values like "02, 03" for months
   @JsonProperty("expiry_year")
   private int expiryYear;
   private String currency;
@@ -30,11 +30,11 @@ public class PostPaymentRequest implements Serializable {
     this.cardNumberLastFour = cardNumberLastFour;
   }
 
-  public int getExpiryMonth() {
+  public String getExpiryMonth() {
     return expiryMonth;
   }
 
-  public void setExpiryMonth(int expiryMonth) {
+  public void setExpiryMonth(String expiryMonth) {
     this.expiryMonth = expiryMonth;
   }
 

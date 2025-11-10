@@ -86,6 +86,7 @@ public class PaymentGatewayService {
     response.setId(id);
     response.setStatus(status);
     response.setCardNumberLastFour(toLastFour(request.getCardNumber()));
+    response.setExpiryMonth(Integer.parseInt(request.getExpiryMonth()));
     response.setExpiryYear(request.getExpiryYear());
     response.setCurrency(request.getCurrency().toUpperCase());
     response.setAmount(request.getAmount());
@@ -120,14 +121,25 @@ public class PaymentGatewayService {
     return true;
   }
 
-  private boolean isExpiryMonthValid(int month){
-    return month >= 1 && month <= 12;
+  private boolean isExpiryMonthValid(String month) {
+    try {
+      int m = Integer.parseInt(month);
+      return m >= 1 && m <= 12;
+    } catch (NumberFormatException e) {
+      return false;
+    }
   }
 
-  private boolean isExpiryMonthAndYearValid(int year, int month){
-    var now = java.time.YearMonth.now();
-    var expiry = java.time.YearMonth.of(year, month);
-    return expiry.isAfter(now);
+
+  private boolean isExpiryMonthAndYearValid(int year, String month) {
+    try {
+      int m = Integer.parseInt(month);
+      var now = java.time.YearMonth.now();
+      var expiry = java.time.YearMonth.of(year, m);
+      return expiry.isAfter(now);
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   private boolean isCurrencyValid(String currency){

@@ -10,7 +10,8 @@ public record BankRequest(
   public static BankRequest from(PostPaymentRequest request){
     return new BankRequest(
         request.getCardNumber(),
-        String.format("%02d/%04d", request.getExpiryMonth(), request.getExpiryYear()),
+        String.format("%02d/%04d", Integer.parseInt(request.getExpiryMonth()),
+            request.getExpiryYear()),
         request.getCurrency(),
         request.getAmount(),
         String.valueOf(request.getCvv())
